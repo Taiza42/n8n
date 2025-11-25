@@ -1,0 +1,1913 @@
+{
+  "name": "Agente RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=data",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        2880,
+        752
+      ],
+      "id": "528df443-34ed-4436-a515-764bd91b187c",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "Bi281HBqssRiCxu2",
+          "name": "Postgres account supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Webhook').item.json.body.data.key.fromMe }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
+                    },
+                    "id": "1b45823c-ef01-4518-944a-422bcfb0ffd6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Fluxo normal"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d79fe85c-b353-453d-a112-ed449039c9a3",
+                    "leftValue": "={{ $('Webhook').item.json.body.data.key.fromMe }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Humano Interviu"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1568,
+        608
+      ],
+      "id": "7c076a3d-6a5a-43d4-bd4a-3cd9bfb11f6a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ $('Webhook').item.json.body.data.key.remoteJidAlt }}_block",
+        "value": "true",
+        "keyType": "string",
+        "expire": true,
+        "ttl": 1000
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        752
+      ],
+      "id": "7663458e-20ef-436f-b343-6f8184d78638",
+      "name": "Block AI",
+      "credentials": {
+        "redis": {
+          "id": "7NpU8AFVqntJ797w",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "block",
+        "key": "={{ $json.body.data.key.remoteJidAlt }}_block",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        592
+      ],
+      "id": "a1090c50-ec39-4404-ba62-ea1945e840fd",
+      "name": "Get Block Chat Id",
+      "credentials": {
+        "redis": {
+          "id": "7NpU8AFVqntJ797w",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.block }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    },
+                    "id": "82a88bd3-3b34-4e8a-8d16-a579755c2bde"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "IA responde"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d47648de-9463-4489-ba1b-1bd964b5b5d2",
+                    "leftValue": "={{ $json.block}}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "IA não responde"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1904,
+        592
+      ],
+      "id": "91120421-2837-40e3-a211-57779e294161",
+      "name": "Switch Block"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.data.message.conversation }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "2b0082b3-8c13-42e4-87fc-d8551ccdd8b3"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b5892fd5-7188-449e-a781-034a1ba6c3e9",
+                    "leftValue": "={{ $json.body.data.message.audioMessage.url }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4c1d7f78-bb07-4ac8-945c-f4ed10f623c9",
+                    "leftValue": "={{ $json.body.data.message.imageMessage.url }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": "={{ true }}",
+              "outputKey": "imagem"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        640,
+        928
+      ],
+      "id": "36c6f7c1-8c21-44ab-9e5a-0186ceada69f",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d990cbd6-a408-4ec4-a889-41be698918d9",
+              "name": "message_type",
+              "type": "string",
+              "value": "={{ $('Webhook').item.json.body.data.messageType }}"
+            },
+            {
+              "id": "23b785c3-f38e-4706-80b7-51f333bba3bd",
+              "name": "message_text",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "id": "6e83f9a7-cf75-4182-b2d2-3151e8af76b9",
+              "name": "from",
+              "type": "string",
+              "value": "={{ $('Webhook').item.json.body.data.key.remoteJid }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "24a40d3e-f0c1-4763-a990-3e489cd4cd45",
+      "name": "Get User's Message",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1392,
+        928
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "body.data.message.base64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        928
+      ],
+      "id": "8ea3ae31-f326-4657-a63c-c5f1d95383ed",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ec0e573-373b-4692-bfae-86b6d3b9aa9a",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.segments[0].text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b8e694b8-68d7-4c96-9b32-1bc37b2b600c",
+      "name": "Transcrição",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1232,
+        928
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "descreva a imagem, o que é a imagem?",
+        "imageUrls": "={{ $('Switch1').item.json.body.data.message.imageMessage.url }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1120,
+        1152
+      ],
+      "id": "f94e3904-fe74-4117-b641-34db06d36526",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "whisper-large-v3-turbo"
+            },
+            {
+              "name": "prompt",
+              "value": "Você é responsável por receber os áudios e transcrever eles com a maior fidelidade possível, garantindo que nada seja perdido do que foi dito"
+            },
+            {
+              "name": "language",
+              "value": "pt"
+            },
+            {
+              "name": "response_format",
+              "value": "verbose_json"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1088,
+        928
+      ],
+      "id": "eb1d1d88-4718-4b13-9be3-eaa6158baf0a",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "content": "# Recebe a mensagem, separa por tipo e interpreta\n",
+        "height": 580,
+        "width": 1220,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        512,
+        800
+      ],
+      "id": "71f8aa1b-0cf0-479f-9b24-88106a2bde47",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "content": "## Passa para atendimento humano\n",
+        "height": 400,
+        "width": 620
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        512
+      ],
+      "id": "2a2f3cf3-05cd-46e2-a2c1-693aea74da92",
+      "name": "Sticky Note15"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "{sua instancia}",
+        "remoteJid": "={{ $('Webhook').item.json.body.data.key.remoteJidAlt }}",
+        "messageText": "={{ $json.output }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        4304,
+        848
+      ],
+      "id": "bc12be32-cb4e-49f7-a361-feefb78483e2",
+      "name": "Evolution API",
+      "credentials": {
+        "evolutionApi": {
+          "id": "UfIQ8U82UsgiYlh3",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "{sua instancia}",
+        "remoteJid": "={{ $('Webhook').item.json.body.data.key.remoteJidAlt }}",
+        "messageText": "={{ $('Agente 1').item.json.output }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        4320,
+        560
+      ],
+      "id": "7de9f008-de43-44d5-bd38-93ff3fe00934",
+      "name": "Evolution API1",
+      "credentials": {
+        "evolutionApi": {
+          "id": "UfIQ8U82UsgiYlh3",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        2896,
+        896
+      ],
+      "id": "1361ec94-a562-47ce-a8e1-a1a2e0fb5fc6",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "oKloFTUh9ZNcsfTy",
+          "name": "Supabase account cacd"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2784,
+        752
+      ],
+      "id": "47d2cd86-9ded-4174-9d1b-9622ac8d9cc1",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3120,
+        912
+      ],
+      "id": "a5eb19a3-7a9a-40a2-ba06-47270c65240d",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2896,
+        1024
+      ],
+      "id": "b25e1bad-383f-400e-a5f1-c2191e672c89",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "Jogos",
+        "description": "Available games, simulators available, what types of simulators, arena prices, simulator prices, opening hours, address, contacts, scheduling website",
+        "topK": 12
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        3552,
+        736
+      ],
+      "id": "5896894e-4938-4a82-b9a9-220eda8f77c2",
+      "name": "Answer questions with a vector store2"
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        3456,
+        880
+      ],
+      "id": "b2b1adbd-1928-4cba-abdd-42eefa11420f",
+      "name": "Supabase Vector Store2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "oKloFTUh9ZNcsfTy",
+          "name": "Supabase account cacd"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3392,
+        736
+      ],
+      "id": "d1071341-42df-41f6-be1e-2bffdb81c4f8",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3696,
+        896
+      ],
+      "id": "911d6631-cc38-480d-b01f-2dc5b46c1259",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3504,
+        1008
+      ],
+      "id": "40f13d76-eb98-4d7e-9d13-8b18cfafb616",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=data",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        4048,
+        1008
+      ],
+      "id": "d7cd8acf-7d30-4f28-a2c5-f0fd4db9177a",
+      "name": "Postgres Chat Memory2",
+      "credentials": {
+        "postgres": {
+          "id": "Bi281HBqssRiCxu2",
+          "name": "Postgres account supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        4112,
+        1152
+      ],
+      "id": "8b02a1c7-46a9-4d10-a158-8b4c86fe0f0e",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "oKloFTUh9ZNcsfTy",
+          "name": "Supabase account cacd"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3920,
+        1024
+      ],
+      "id": "c068205a-273c-4827-836e-49a81914a877",
+      "name": "OpenAI Chat Model5",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        4400,
+        1232
+      ],
+      "id": "6b515c4a-c0c5-4d8d-8df1-277c8903c549",
+      "name": "OpenAI Chat Model6",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        4112,
+        1312
+      ],
+      "id": "5e8da92a-2364-4d53-aa4d-6239cfced7e4",
+      "name": "Embeddings OpenAI2",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "documents",
+        "topK": 12
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        2960,
+        768
+      ],
+      "id": "8e853676-0a23-4096-a9dc-a50876859b79",
+      "name": "Answer questions with a vector store"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "body.data.message.base64",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        1152
+      ],
+      "id": "0518e538-800e-41d1-9107-0f198331c822",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// mantém os dados originais\nconst item = $input.item; // pega a mensagem original\n\n// ajusta para o horário de São Paulo (GMT-3)\nconst agora = new Date(new Date().toLocaleString(\"en-US\", { timeZone: \"America/Sao_Paulo\" }));\nconst hora = agora.getHours();\nconst minuto = agora.getMinutes();\nconst dia = agora.getDay(); // 0 = domingo, 1 = segunda, ..., 6 = sábado\n\nfunction dentroIntervalo(inicio, fim) {\n  const horaAtual = hora + minuto / 60;\n  return horaAtual >= inicio && horaAtual < fim;\n}\n\nlet foraDoHorario;\n\n// Define as regras\nswitch (dia) {\n  case 2: case 3: case 4: // terça a quinta\n    foraDoHorario = !dentroIntervalo(15, 21);\n    break;\n  case 5: // sexta\n    foraDoHorario = !dentroIntervalo(13, 22);\n    break;\n  case 6: // sábado\n    foraDoHorario = !dentroIntervalo(11, 22);\n    break;\n  case 0: // domingo\n    foraDoHorario = !dentroIntervalo(11, 21);\n    break;\n  default:\n    foraDoHorario = true; // segunda\n}\n\nitem.json.foraDoHorario = foraDoHorario;\nreturn [item];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        944
+      ],
+      "id": "e6d47659-df3e-4723-83c0-618108acfdfb",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "709c9571-9007-4271-997a-14e3cd281b87",
+              "leftValue": "={{ $json.foraDoHorario == true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "279ae94a-4c6d-49b0-88df-d9c02ce596e3",
+              "leftValue": "={{ $json.foraDoHorario == false }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        352,
+        944
+      ],
+      "id": "bdd8011e-65f2-42b6-90ef-e54b97c553e6",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        656,
+        1168
+      ],
+      "id": "7fc1ee1c-bd1b-43c3-a308-ee52b9c5a94d",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "1b45823c-ef01-4518-944a-422bcfb0ffd6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Fluxo normal"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d79fe85c-b353-453d-a112-ed449039c9a3",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Humano Interviu"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3904,
+        576
+      ],
+      "id": "3c2fdbc8-4e55-4a85-863c-f93af8bb1f0e",
+      "name": "Switch2"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ $('Webhook').item.json.body.data.key.remoteJid }}_block",
+        "value": "true",
+        "keyType": "string",
+        "expire": true,
+        "ttl": 1000
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        752
+      ],
+      "id": "10840d3e-e8d0-43c4-aae9-c93103fea0a2",
+      "name": "Block AI1",
+      "credentials": {
+        "redis": {
+          "id": "7NpU8AFVqntJ797w",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "data",
+        "description": "Answer with a vector store data",
+        "topK": 12
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        4160,
+        1008
+      ],
+      "id": "772ba391-e1fd-4d53-91c6-78d3fc290158",
+      "name": "Answer with a vector store"
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        2304,
+        896
+      ],
+      "id": "c4eb9a0d-b14a-472c-829f-86112ded6ff7",
+      "name": "Supabase Vector Store3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "oKloFTUh9ZNcsfTy",
+          "name": "Supabase account cacd"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2544,
+        896
+      ],
+      "id": "6f87fabb-95b2-4cd3-b7d9-a8499182e36c",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2304,
+        1024
+      ],
+      "id": "26d44572-ebfb-4b7c-baaf-0f41bd59f538",
+      "name": "Embeddings OpenAI3",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2240,
+        736
+      ],
+      "id": "f68964c1-be2f-4ae1-b83d-38ddb04b2132",
+      "name": "OpenAI Chat Model7",
+      "credentials": {
+        "openAiApi": {
+          "id": "FmJ4Hv013JWrV3RY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "documents",
+        "topK": 12
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        2368,
+        768
+      ],
+      "id": "bf470d5b-7cc0-418e-b485-5b466b0664bc",
+      "name": "Answer questions with a vector store3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Switch').item.json.body.data.message.conversation }}\n{{ $('Switch').item.json.message_text }}",
+        "options": {
+          "systemMessage": "Coloque o seu prompt aqui:\n“O agente extrator deve acessar o banco de dados definido no workflow, executar a consulta necessária e retornar exatamente os dados encontrados, sem interpretar, modificar, resumir ou transformar nada.\nO objetivo é apenas extrair e entregar o output bruto de forma organizada para os próximos agentes da automação.”"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        2272,
+        576
+      ],
+      "id": "b0409cd1-42a8-4527-b635-724eb2cc5092",
+      "name": "Agente Extrator de dados"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Switch').item.json.body.data.message.conversation }}\n{{ $('Switch').item.json.message_text }}\ninformações da base de dados {{ $json.output }}",
+        "options": {
+          "systemMessage": "=Coloque o seu prompt aqui:\n“O Agente 1 deve receber os dados extraídos do banco e formular a primeira resposta ao usuário.\nEle deve organizar as informações de forma clara, objetiva e coerente, usando apenas o que estiver disponível nos dados fornecidos.\nNão deve inventar informações, apenas estruturar e apresentar a resposta inicial de maneira compreensível.”"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        2864,
+        576
+      ],
+      "id": "09e9b583-d69a-4bad-8365-cb4f53df8695",
+      "name": "Agente 1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Output do Agente 1 {{ $json.output }}\nMensagem usuario: {{ $('Switch').item.json.body.data.message.conversation }}\n{{ $('Switch').item.json.message_text }}\ninformações da base de dados {{ $json.output }}",
+        "options": {
+          "systemMessage": "“O Agente Verificador deve analisar a resposta criada pelo Agente 1 e verificar se ela está clara, completa e correta com base nos dados fornecidos pelo Agente Extrator.\nEle deve confirmar se todas as instruções foram seguidas, se a resposta condiz com o conteúdo da base e se não há informações ausentes ou equivocadas.\nCaso a resposta não atenda ao padrão de qualidade, ele deve indicar isso explicitamente e solicitar uma nova redação.”"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        3376,
+        576
+      ],
+      "id": "ab89622d-7c16-4143-955e-7f68f27709d8",
+      "name": "Agente Verificador"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "data"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        3472,
+        736
+      ],
+      "id": "465910ca-086b-4986-b836-92ead9ff2ace",
+      "name": "Postgres Chat Memory1",
+      "credentials": {
+        "postgres": {
+          "id": "Bi281HBqssRiCxu2",
+          "name": "Postgres account supabase"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Verifica se é horário comercial ou não\n",
+        "height": 368,
+        "width": 364,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        128,
+        848
+      ],
+      "id": "e07ad992-808f-46c6-ac1e-1ce035386a26",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Recebe a mensagem e inicia o fluxo\n\n",
+        "height": 352,
+        "width": 316,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        848
+      ],
+      "id": "164e2a20-b1cc-4bca-b32c-9b9d2307dbe1",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "\n",
+        "height": 1300,
+        "width": 3204,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2128,
+        272
+      ],
+      "id": "ee888b69-7901-491c-b9f1-666a309d7ebb",
+      "name": "Sticky Note16"
+    },
+    {
+      "parameters": {
+        "content": "## Agente extrai os principais dados do banco de dados\n### Facilitando a respostas dos próximos agentes\n### Diminui o uso de tokens do fluxo \n### Diminui as chances de não acionamento da ferramenta nos próximos agentes \n",
+        "height": 816,
+        "width": 524,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        384
+      ],
+      "id": "5d822f65-da79-49d2-a35b-6a649c5a62c8",
+      "name": "Sticky Note17"
+    },
+    {
+      "parameters": {
+        "content": "## Agente formula Resposta 1\n",
+        "height": 816,
+        "width": 524,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2736,
+        384
+      ],
+      "id": "6b3126c2-3401-4847-824a-5232d4c4858f",
+      "name": "Sticky Note18"
+    },
+    {
+      "parameters": {
+        "content": "## Agente de Qualidade\n### Analisa a qualidade da resposta elaborada pelo Agente 1\n### Oferece de Output um veredito sobre a qualidade da Resposta 1 e encaminha se há necessidade de reformular ou não a resposta \n",
+        "height": 816,
+        "width": 556,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3280,
+        384
+      ],
+      "id": "5935c594-c721-4a02-94c8-f05e182e8462",
+      "name": "Sticky Note19"
+    },
+    {
+      "parameters": {
+        "content": "\n",
+        "height": 672,
+        "width": 1388,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3872,
+        800
+      ],
+      "id": "abb1f5c2-6d0c-4274-98b1-8a0453b20d65",
+      "name": "Sticky Note20"
+    },
+    {
+      "parameters": {
+        "content": "\n## Envia a resposta formulada adequadamente para o usuario e a resposta inadequada para ser reelaborada pelo Agente 2",
+        "height": 352,
+        "width": 716,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3856,
+        432
+      ],
+      "id": "48a1f9d5-26cb-46b8-982d-f6ba92eb1927",
+      "name": "Sticky Note21"
+    },
+    {
+      "parameters": {
+        "content": "\n## Reelabora a resposta 1 e envia para o usuario final corrigida",
+        "height": 240,
+        "width": 188,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4576,
+        896
+      ],
+      "id": "dc1f1af5-5997-44ef-a69d-b54e7e80d23a",
+      "name": "Sticky Note22"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Mensagem do usuario: {{ $('Switch').item.json.body.data.message.conversation }}\n{{ $('Switch').item.json.message_text }}\ninformações da base de dados {{ $json.output }}",
+        "options": {
+          "systemMessage": "=Coloque o seu prompt aqui:\n“O Agente 2 deve gerar uma nova resposta, reescrevendo a versão inicial sempre que o Agente Verificador informar que a primeira resposta não possui qualidade suficiente.\nEle deve corrigir falhas, adicionar informações faltantes e garantir clareza e precisão, seguindo estritamente os dados provenientes do Agente Extrator.\nAssim como o Agente 1, não deve inventar nada — apenas aprimorar e entregar a versão final correta.”"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        3952,
+        848
+      ],
+      "id": "f9d79acb-81e7-4537-ba32-62daf6c9987d",
+      "name": "Agente 2"
+    },
+    {
+      "parameters": {
+        "path": "1348fed1-db51-4d2d-9596-257011395ede",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -64,
+        944
+      ],
+      "id": "f0fab5a0-0fc9-49f1-a364-4162789b8a80",
+      "name": "Webhook",
+      "webhookId": "1348fed1-db51-4d2d-9596-257011395ede"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Block Chat Id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Block AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Block Chat Id": {
+      "main": [
+        [
+          {
+            "node": "Switch Block",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User's Message": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcrição": {
+      "main": [
+        [
+          {
+            "node": "Get User's Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Get User's Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Transcrição",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Block": {
+      "main": [
+        [
+          {
+            "node": "Agente Extrator de dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Answer questions with a vector store",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente 1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente 1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer questions with a vector store",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer questions with a vector store2": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Verificador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store2": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Answer questions with a vector store2",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Verificador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer questions with a vector store2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory2": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente 2",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Answer with a vector store",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente 2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer with a vector store",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer questions with a vector store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente 1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch2": {
+      "main": [
+        [
+          {
+            "node": "Evolution API1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agente 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Block AI": {
+      "main": [
+        [
+          {
+            "node": "Block AI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer with a vector store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente 2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store3": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Answer questions with a vector store3",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer questions with a vector store3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI3": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store3",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Extrator de dados",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer questions with a vector store3": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente Extrator de dados",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Extrator de dados": {
+      "main": [
+        [
+          {
+            "node": "Agente 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente 1": {
+      "main": [
+        [
+          {
+            "node": "Agente Verificador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Verificador": {
+      "main": [
+        [
+          {
+            "node": "Switch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Verificador",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente 2": {
+      "main": [
+        [
+          {
+            "node": "Evolution API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "16e4ea96-a368-4de0-9c0e-1afc8a5325b9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9c1423d4411993ae6d577faf6e19a5d2b1985d77d234a4df8fb27df90408edc4"
+  },
+  "id": "DxInTK2ubOMJd6x6",
+  "tags": [
+    {
+      "updatedAt": "2025-04-26T16:19:55.280Z",
+      "createdAt": "2025-04-26T16:19:55.280Z",
+      "id": "cOPkensfE8blw7L0",
+      "name": "RAG"
+    }
+  ]
+}
